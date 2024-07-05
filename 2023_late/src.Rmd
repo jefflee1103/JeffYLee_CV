@@ -3,22 +3,24 @@ name: Jeffrey Y Lee
 # surname: Lee
 date: "`r format(Sys.time(), '%B, %Y')`"
 #qualifications: 
-address: "University of Oxford, OX1 3QU, UK"
+address: "University of Glasgow, G12 8QQ, UK"
 position: "Postdoctoral scientist"
 # profilepic: FOTO.png
 # phone: 0996597844
-email: "jeff.lee@bioch.ox.ac.uk"
+email: "Jeff.Lee@glasgow.ac.uk"
 orcid: "0000-0002-5146-0037"
 googlescholar: "Scholar"
-github: jefflee1103
-linkedin: jeffyslee
-twitter: jefflee1103
+github: GitHub
+linkedin: Linkedin
+twitter: Twitter/X
 # www: darwincubi.rbind.io
 # header-includes:
 headcolor: 3B9DE1
 output: 
   vitae::awesomecv:
     page_total: true
+    pandoc_args:
+      - --lua-filter="/Users/jefflee/Documents/Github/JeffYLee_CV/2023_late/lua/strong.lua"
 editor_options: 
   chunk_output_type: console
 ---
@@ -29,7 +31,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(vitae)
 library(dplyr)
 library(magrittr)
-source("Utils/data_download_funs.R")
+source("Utils/data_download_funs.R") 
 
 CV <- create_CV_object(
   data_location = "https://docs.google.com/spreadsheets/d/1WPoKQiKZWfyvW5HA48tUJ1JOth7A2-Vb0v6HsmcmUSs/edit?usp=sharing",  
@@ -80,27 +82,78 @@ CV %>% print_skill()
 
 # Publications
 
+\scriptsize
+
 ## Lead author publications
 
 ```{r}
 library(dplyr)
 # knitr::write_bib(c("vitae", "tibble"), "Lead_pub.bib")
 
-bibliography_entries("Lead_pub.bib") %>%
-  arrange(desc(issued))
+# bibliography_entries("Lead_pub.bib") %>%
+#   arrange(desc(issued))
+# 
+# 
+# 
+
 ```
 
 &nbsp;
 
 ## Contributing publications
 
-```{r}
+```{r, results = "asis"}
 library(dplyr)
+library(stringr)
+library(scholar)
 # knitr::write_bib(c("vitae", "tibble"), "Contributing_pub.bib")
 
-bibliography_entries("Contributing_pub.bib") %>%
-  arrange(desc(issued))
+# bibliography_entries("Contributing_pub.bib") %>%
+#   arrange(desc(issued))
+
+# CV$contributing_pub %>%
+#   # mutate(author = str_replace(author, "Lee, J. Y.", "\\\\textbf{Lee, J. Y.}")) %>%
+#   tibble::new_tibble(preserve = "id", class = c("vitae_bibliography",
+#     "vitae_preserve"), nrow = nrow(CV$contributing_pub))
+
+
+format.authors <- function(scholar.profile, author.name) {
+  library(dplyr)
+
+  swap_initials <- function(author.name) {
+    sub("(.*) (.*)", "\\2, \\1.", trimws(author.name))
+  }
+
+  pubs <- scholar::get_publications(scholar.profile)
+  pubs %>%
+    strsplit(x = .$author, split = ",") -> pubs2
+  lapply(pubs2, function(x) {
+    x <- swap_initials(x)
+    x[length(x)] <- paste0("& ", x[length(x)])
+    x <- paste0(x, collapse = ", ")
+    ifelse(startsWith(x, "& "), sub("& ", "", x), x)
+    }
+    ) -> pubs$author
+
+  author.name2 <- swap_initials(author.name)
+
+  pubs %>%
+    arrange(desc(year)) %>%
+    mutate(journal = paste0("*", journal, "*"),
+           Publications = paste0(author, " (", year, "). ",
+                                 title, ". ", journal, ". ",
+                                 number),
+           Publications = gsub(author.name2, paste0("**", author.name2, "**"), Publications)) %>%
+    select(Publications)
+}
+
+pubs <- format.authors("CxsNxLsAAAAJ", "JY Lee")
+
+cat(unlist(pubs), sep = "\\\n \\\n")
+
 ```
+
+\normalsize
 
 # Professional service 
 

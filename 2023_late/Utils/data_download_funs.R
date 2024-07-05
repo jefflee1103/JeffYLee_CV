@@ -29,6 +29,8 @@ create_CV_object <-  function(data_location,
     cv$text_blocks   <- read_gsheet(sheet_id = "text_blocks")
     cv$contact_info  <- read_gsheet(sheet_id = "contact_info")
     cv$post_info  <- read_gsheet(sheet_id = "post_info")
+    cv$lead_pub <- read_gsheet(sheet_id = "lead_pub")
+    cv$contributing_pub <- read_gsheet(sheet_id = "contributing_pub")
   } else {
     # Want to go old-school with csvs?
     cv$entries_data <- readr::read_csv(paste0(data_location, "entries.csv"), skip = 1)
