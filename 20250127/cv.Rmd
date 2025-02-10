@@ -1,0 +1,245 @@
+---
+name: Jeffrey Y Lee
+# surname: Thériault
+# profilepic: "img/profile.png"
+position: "Postdoctoral scientist"
+# qualifications: "MSc"
+address: "University of Glasgow, G12 8QQ, UK"
+# phone: (438) 995-7648
+# www: remi-theriault.com
+email: "Jeff.Lee@glasgow.ac.uk"
+orcid: "0000-0002-5146-0037"
+googlescholar: "Scholar"
+github: jefflee1103
+linkedin: JeffYSLee
+twitter: jefflee1103
+# aboutme: |
+date: "`r format(Sys.time(), '%B %Y')`"
+headcolor: "3B9DE1" 
+urlcolor: blue
+linkcolor: blue
+output: 
+  vitae::awesomecv:
+    page_total: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+#######################
+#### SHORT VERSION ####
+#######################
+
+# Whether to print a shortened version of the CV
+short <- TRUE
+
+########################
+#### PACKAGE SETUP #####
+########################
+
+# Required packages
+library(vitae)
+library(dplyr)
+
+# For Google scholar data/visualization
+library(scholar)
+library(ggplot2)
+library(forcats)
+library(patchwork)
+library(see)
+library(rsvg)
+library(kableExtra)
+
+# To format links throughout the CV
+source("files/format_links.R")
+
+# Setup CV google sheets document
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(vitae)
+library(dplyr)
+library(magrittr)
+source("Utils/data_download_funs.R")
+
+CV <- create_CV_object(
+  data_location = "https://docs.google.com/spreadsheets/d/1WPoKQiKZWfyvW5HA48tUJ1JOth7A2-Vb0v6HsmcmUSs/edit?usp=sharing",  
+  pdf_mode = FALSE
+)
+
+```
+
+\vspace*{0.3cm}
+
+```{r, results='asis'}
+CV %<>% print_text_block("intro")
+```
+
+# Employment
+
+```{r}
+CV$entries_data %>% 
+  filter(section == 'employment') %>% 
+  detailed_entries(
+    what = institution,
+    when = glue::glue("{`start`} - {`end`}"),
+    with = title,
+    where = loc,
+    why = description_bullets
+  )
+```
+
+# Education
+
+```{r}
+CV$entries_data %>% 
+  filter(section == 'education') %>% 
+  detailed_entries(
+    what = institution,
+    when = glue::glue("{`start`} - {`end`}"),
+    with = title,
+    where = loc,
+    why = description_bullets
+  )
+```
+
+# Skills
+
+```{r, results='asis'}
+CV %>% print_skill()
+```
+
+
+# Publications
+
+\scriptsize
+\vspace*{0.2cm}
+
+## Lead author publications
+
+```{r, results = "asis", echo = FALSE}
+########################
+#### GOOGLE SCHOLAR ####
+########################
+
+format.authors.df <- function(scholar.profile, author.name) {
+  library(dplyr)
+  
+  swap_initials <- function(author.name) {
+    sub("(.*) (.*)", "\\2, \\1.", trimws(author.name))
+  }
+  
+  pubs <- scholar::get_publications(scholar.profile)
+  pubs %>%
+    strsplit(x = .$author, split = ",") -> pubs2
+  lapply(pubs2, function(x) {
+    x <- swap_initials(x)
+    x[length(x)] <- paste0("& ", x[length(x)])
+    x <- paste0(x, collapse = ", ")
+    ifelse(startsWith(x, "& "), sub("& ", "", x), x)
+  }
+  ) -> pubs$author
+  
+  author.name2 <- swap_initials(author.name)
+  
+  pubs %>%
+    ##
+    mutate(journal = case_when(
+    pubid == "Y0pCki6q_DkC" ~ "Sci Adv",
+    TRUE ~ journal
+  )) %>%
+  mutate(year = case_when(
+    pubid == "Y0pCki6q_DkC" ~ 2025,
+    TRUE ~ year
+  )) %>%
+    ##
+    mutate(journal = paste0("*", journal, "*"),
+           Publications = paste0(author, " (", year, "). ",
+                                 title, ". ", journal, ". ",
+                                 number),
+           Publications = gsub(author.name2, paste0("**", author.name2, "**"), Publications)) %>%
+    arrange(desc(year))
+}
+
+pubs <- format.authors.df("CxsNxLsAAAAJ", "JY Lee") 
+
+lead_pubids <- c("Y0pCki6q_DkC", "Tyk-4Ss8FVUC", "u-x6o8ySG0sC", "eQOLeE2rZwMC")
+pubs_lead <- pubs %>%
+  filter(pubid %in% lead_pubids) %>%
+  dplyr::select(Publications) %>%
+  mutate(Publications = paste0(row_number(), "\\. ", Publications))
+
+cat(unlist(pubs_lead), sep = "\\\n \\\n")
+
+```
+
+\vspace*{0.3cm}
+
+## Contributing publications
+
+```{r, results = "asis", echo = FALSE}
+pubs_contributing <- pubs %>%
+  filter(!(pubid %in% lead_pubids)) %>%
+  dplyr::select(Publications) %>%
+  mutate(Publications = paste0(row_number(), "\\. ", Publications))
+
+cat(unlist(pubs_contributing), sep = "\\\n \\\n")
+```
+
+\normalsize
+
+# Professional service 
+
+```{r}
+CV$entries_data %>% 
+  filter(section == 'serv') %>% 
+  arrange(desc(start)) %>%
+  detailed_entries(
+    what = institution,
+    with = title,
+    why = description_bullets
+  )
+```
+
+# Teaching 
+
+```{r}
+CV$entries_data %>% 
+  filter(section == 'teaching') %>% 
+  arrange(desc(start)) %>%
+  detailed_entries(
+    what = institution,
+    when = glue::glue("{`start`} - {`end`}"),
+    with = title,
+  )
+```
+
+# Certificates & Awards
+
+```{r}
+CV$entries_data %>% 
+  filter(section == 'cert') %>% 
+  arrange(desc(start)) %>%
+  brief_entries(
+    what = title,
+    when = start,
+    with = institution,
+  )
+```
+
+# Pre-PhD employment
+
+```{r}
+CV$entries_data %>% 
+  filter(section == 'prephd_employment') %>% 
+  detailed_entries(
+    what = institution,
+    when = glue::glue("{`start`} - {`end`}"),
+    with = title,
+    why = description_bullets
+  )
+```
+
+
+
+
